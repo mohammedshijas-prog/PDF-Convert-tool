@@ -367,7 +367,7 @@
   }
 
   function initPdfJs() {
-    if (!window.pdfjsLib) throw new Error('The PNG exporter did not load. Open Folio with Start.command.');
+    if (!window.pdfjsLib) throw new Error('This PDF could not be read. Refresh the page and try again.');
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
       pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
     }
@@ -402,8 +402,11 @@
     }
   }
 
-  async function pdfToPngs(bytes, settings, onProgress) {
+  async function pdfToImages(bytes, settings, onProgress) {
     initPdfJs();
+    var mime = settings.mime === 'image/png' ? 'image/png' : 'image/jpeg';
+    var ext = mime === 'image/png' ? '.png' : '.jpg';
+    var quality = settings.jpegQuality == null ? 0.86 : settings.jpegQuality;
     var task = pdfjsLib.getDocument({ data: bytes.slice(0) });
     var doc = await task.promise;
     try {
@@ -423,13 +426,15 @@
         ctx.fillStyle = settings.background || '#ffffff';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-        var blob = await canvasToBlob(canvas, 'image/png');
-        var head = new Uint8Array(await blob.slice(0, 8).arrayBuffer());
-        var sig = [137, 80, 78, 71, 13, 10, 26, 10];
-        var ok = sig.every(function (b, index) { return head[index] === b; });
-        if (!ok) throw new Error('PNG export failed on page ' + n + '.');
+        var blob = await canvasToBlob(canvas, mime, quality);
+        if (mime === 'image/png') {
+          var head = new Uint8Array(await blob.slice(0, 8).arrayBuffer());
+          var sig = [137, 80, 78, 71, 13, 10, 26, 10];
+          var ok = sig.every(function (b, index) { return head[index] === b; });
+          if (!ok) throw new Error('PNG export failed on page ' + n + '.');
+        }
         results.push({
-          name: settings.baseName + '-' + String(n).padStart(2, '0') + '.png',
+          name: settings.baseName + '-' + String(n).padStart(2, '0') + ext,
           blob: blob,
           width: canvas.width,
           height: canvas.height
@@ -445,6 +450,193 @@
     }
   }
 
+  async function pdfToPngs(bytes, settings, onProgress) {
+    var next = Object.assign({}, settings, { mime: 'image/png' });
+    return pdfToImages(bytes, next, onProgress);
+  }
+
+  async function splitPdf(bytes, settings, onProgress) {
+    var src = await loadPdf(bytes);
+    var total = src.getPageCount();
+    var indexes = [];
+    if (settings.mode === 'range') {
+      var from = Math.max(1, settings.from | 0);
+      var to = Math.min(total, settings.to | 0);
+      if (to < from) throw new Error('Choose a page range inside this PDF.');
+      var n;
+      for (n = from; n <= to; n++) indexes.push(n - 1);
+    } else {
+      indexes = src.getPageIndices();
+      if (indexes.length > 40) {
+        indexes = indexes.slice(0, 40);
+      }
+    }
+    if (!indexes.length) throw new Error('This PDF has no pages.');
+    if (settings.mode === 'range') {
+      if (onProgress) onProgress(1, 1, 'Building the new PDF…');
+      var ranged = await PDFLib.PDFDocument.create();
+      stamp(ranged, settings.baseName || 'Split');
+      var copied = await ranged.copyPages(src, indexes);
+      copied.forEach(function (page) { ranged.addPage(page); });
+      return {
+        parts: [{ name: (settings.baseName || 'split') + '.pdf', bytes: await ranged.save() }],
+        limited: false
+      };
+    }
+    var parts = [];
+    var i;
+    for (i = 0; i < indexes.length; i++) {
+      if (onProgress) onProgress(i + 1, indexes.length, 'Splitting page ' + (indexes[i] + 1) + '…');
+      var out = await PDFLib.PDFDocument.create();
+      var pageCopy = await out.copyPages(src, [indexes[i]]);
+      out.addPage(pageCopy[0]);
+      parts.push({
+        name: (settings.baseName || 'page') + '-' + String(indexes[i] + 1).padStart(2, '0') + '.pdf',
+        bytes: await out.save()
+      });
+      await yieldToUi();
+    }
+    return { parts: parts, limited: total > 40 };
+  }
+
+  async function compressPdf(bytes, settings, onProgress) {
+    var level = settings.level || 'balanced';
+    if (level === 'light') {
+      if (onProgress) onProgress(1, 1, 'Packing the PDF…');
+      var src = await loadPdf(bytes);
+      var packed = await src.save({ useObjectStreams: true });
+      var chosen = packed.byteLength < bytes.byteLength ? packed : bytes;
+      return {
+        bytes: chosen,
+        pageCount: src.getPageCount(),
+        smaller: chosen.byteLength < bytes.byteLength,
+        flattened: false
+      };
+    }
+    initPdfJs();
+    var task = pdfjsLib.getDocument({ data: bytes.slice(0) });
+    var doc = await task.promise;
+    try {
+      var limit = Math.min(doc.numPages, 40);
+      var dpi = level === 'small' ? 72 : 110;
+      var jpeg = level === 'small' ? 0.55 : 0.72;
+      var out = await PDFLib.PDFDocument.create();
+      stamp(out, settings.title || 'Compressed');
+      var n;
+      for (n = 1; n <= limit; n++) {
+        if (onProgress) onProgress(n, limit, 'Compressing page ' + n + '…');
+        var page = await doc.getPage(n);
+        var unscaled = page.getViewport({ scale: 1 });
+        var viewport = page.getViewport({ scale: dpi / 72 });
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.floor(viewport.width));
+        canvas.height = Math.max(1, Math.floor(viewport.height));
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+        var blob = await canvasToBlob(canvas, 'image/jpeg', jpeg);
+        var image = await out.embedJpg(new Uint8Array(await blob.arrayBuffer()));
+        var sheet = out.addPage([unscaled.width, unscaled.height]);
+        sheet.drawImage(image, { x: 0, y: 0, width: unscaled.width, height: unscaled.height });
+        page.cleanup();
+        canvas.width = 0;
+        canvas.height = 0;
+        await yieldToUi();
+      }
+      var saved = await out.save();
+      return {
+        bytes: saved,
+        pageCount: limit,
+        smaller: saved.byteLength < bytes.byteLength,
+        flattened: true,
+        limited: doc.numPages > 40
+      };
+    } finally {
+      await doc.destroy();
+    }
+  }
+
+  function pdfColor(hex) {
+    var raw = String(hex || '#5b2fd4').replace('#', '');
+    if (raw.length === 3) raw = raw[0] + raw[0] + raw[1] + raw[1] + raw[2] + raw[2];
+    var n = parseInt(raw, 16);
+    if (!Number.isFinite(n)) n = 0x5b2fd4;
+    return PDFLib.rgb(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255);
+  }
+
+  function pdfSafe(text) {
+    return String(text || '').replace(/[^\x20-\x7E\u00A0-\u00FF]/g, '?');
+  }
+
+  async function applyAnnotations(bytes, marks, onProgress) {
+    var pdf = await loadPdf(bytes);
+    var pages = pdf.getPages();
+    var fonts = {};
+    async function fontFor(name) {
+      var key = name === 'times' ? 'times' : name === 'courier' ? 'courier' : 'helvetica';
+      if (!fonts[key]) {
+        var face = key === 'times'
+          ? PDFLib.StandardFonts.TimesRoman
+          : key === 'courier'
+            ? PDFLib.StandardFonts.Courier
+            : PDFLib.StandardFonts.Helvetica;
+        fonts[key] = await pdf.embedFont(face);
+      }
+      return fonts[key];
+    }
+    var images = {};
+    var i;
+    for (i = 0; i < marks.length; i++) {
+      var mark = marks[i];
+      if (onProgress) onProgress(i + 1, marks.length, 'Adding item ' + (i + 1) + '…');
+      var page = pages[(mark.page || 1) - 1];
+      if (!page) continue;
+      var color = pdfColor(mark.color);
+      if (mark.type === 'text') {
+        var font = await fontFor(mark.font);
+        var size = Math.max(8, Math.min(96, mark.size || 18));
+        page.drawText(pdfSafe(mark.text), { x: mark.x, y: mark.y, size: size, font: font, color: color });
+      } else if (mark.type === 'rect') {
+        page.drawRectangle({
+          x: mark.x,
+          y: mark.y,
+          width: Math.max(1, mark.width),
+          height: Math.max(1, mark.height),
+          borderColor: color,
+          borderWidth: 1.5,
+          color: color,
+          opacity: 0.16
+        });
+      } else if (mark.type === 'ink' && mark.points && mark.points.length > 1) {
+        var p;
+        for (p = 1; p < mark.points.length; p++) {
+          page.drawLine({
+            start: mark.points[p - 1],
+            end: mark.points[p],
+            thickness: mark.thickness || 2,
+            color: color
+          });
+        }
+      } else if (mark.type === 'image' && mark.bytes) {
+        var cacheKey = mark.id || i;
+        if (!images[cacheKey]) {
+          images[cacheKey] = mark.mime === 'image/png'
+            ? await pdf.embedPng(mark.bytes)
+            : await pdf.embedJpg(mark.bytes);
+        }
+        page.drawImage(images[cacheKey], {
+          x: mark.x,
+          y: mark.y,
+          width: mark.width,
+          height: mark.height
+        });
+      }
+      await yieldToUi();
+    }
+    return { bytes: await pdf.save(), pageCount: pages.length };
+  }
+
   window.FolioEngine = {
     MM: MM,
     margins: margins,
@@ -457,6 +649,10 @@
     resizePdf: resizePdf,
     renderPdfPreview: renderPdfPreview,
     pdfToPngs: pdfToPngs,
+    pdfToImages: pdfToImages,
+    splitPdf: splitPdf,
+    compressPdf: compressPdf,
+    applyAnnotations: applyAnnotations,
     friendlyPdfError: friendlyPdfError
   };
 })();

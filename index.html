@@ -4,43 +4,113 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Folio — free PDF tools</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='7' y='4' width='14' height='20' rx='2' fill='%23f4ecdf'/%3E%3Crect x='11' y='8' width='14' height='20' rx='2' fill='%23c4491d'/%3E%3C/svg%3E">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%236d28d9'/%3E%3Crect x='9' y='7' width='14' height='18' rx='2' fill='white'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
 </head>
-<body>
-  <div class="app">
-    <header class="brand-col">
-      <div class="logo">
-        <svg viewBox="0 0 32 32" aria-hidden="true">
-          <rect x="6" y="3" width="15" height="21" rx="2" fill="#f4ecdf"></rect>
-          <rect x="11" y="8" width="15" height="21" rx="2" fill="#c4491d"></rect>
-        </svg>
-        <h1>Folio</h1>
-      </div>
-      <p class="tagline">Free PDF tools on this computer. Pictures, merge, paper size, and PNG. Nothing is uploaded.</p>
-      <nav aria-label="Tools">
-        <button type="button" data-mode-btn="images" aria-pressed="true">Images to PDF</button>
-        <button type="button" data-mode-btn="merge" aria-pressed="false">Merge PDFs</button>
-        <button type="button" data-mode-btn="resize" aria-pressed="false">Size and border</button>
-        <button type="button" data-mode-btn="png" aria-pressed="false">PDF to PNG</button>
-      </nav>
-      <p class="fine" id="fileHint">Twenty pictures fit in one PDF. For more, make a second PDF and merge them. Open Start.command if PDF to PNG cannot read a file.</p>
-    </header>
+<body class="is-home">
+  <header class="topbar">
+    <button type="button" class="back" id="backHome" hidden>All tools</button>
+    <div class="logo">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#6d28d9"></rect>
+        <rect x="9" y="7" width="14" height="18" rx="2" fill="#ffffff"></rect>
+        <rect x="12" y="12" width="8" height="2" rx="1" fill="#6d28d9"></rect>
+        <rect x="12" y="16" width="8" height="2" rx="1" fill="#c4b5fd"></rect>
+      </svg>
+      <h1>Folio</h1>
+    </div>
+    <p class="tagline">Free PDF tools on this computer. Nothing is uploaded.</p>
+  </header>
 
+  <section class="home" id="home">
+    <div class="home-intro">
+      <h2>All tools</h2>
+      <p>Pick a tool. Your files stay in this browser.</p>
+    </div>
+    <div class="tool-grid">
+      <button type="button" class="tool-card" data-mode-btn="merge">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="18" height="24" rx="3" fill="#ff8a73"/><rect x="20" y="14" width="18" height="24" rx="3" fill="#e25b45"/><path d="M16 22h12M22 16l6 6-6 6" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Merge PDF</strong>
+        <span>Combine PDFs in the order you want with the easiest PDF merger available.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="split">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="8" width="20" height="32" rx="3" fill="#ff8a5b"/><path d="M18 24h12" stroke="#fff" stroke-width="2" stroke-dasharray="2 2"/><path d="M10 20l6 4-6 4M38 20l-6 4 6 4" fill="none" stroke="#ef6a3c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Split PDF</strong>
+        <span>Separate one page or a whole set for easy conversion into independent PDF files.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="compress">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="14" y="6" width="20" height="26" rx="3" fill="#3ecf73"/><path d="M24 18v12M18 26l6 6 6-6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="36" width="16" height="4" rx="2" fill="#1f8a45"/></svg>
+        <strong>Compress PDF</strong>
+        <span>Reduce file size while optimizing for maximal PDF quality.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="toword">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="6" width="28" height="36" rx="4" fill="#2b579a"/><text x="24" y="30" text-anchor="middle" font-size="16" font-family="Georgia, serif" fill="#fff">W</text></svg>
+        <strong>PDF to Word</strong>
+        <span>Easily convert your PDF files into easy to edit DOC and DOCX documents.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="toppt">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="6" width="28" height="36" rx="4" fill="#d04423"/><text x="24" y="30" text-anchor="middle" font-size="16" font-family="Georgia, serif" fill="#fff">P</text></svg>
+        <strong>PDF to PowerPoint</strong>
+        <span>Turn your PDF files into easy to edit PPT and PPTX slideshows.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="toexcel">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="6" width="28" height="36" rx="4" fill="#217346"/><text x="24" y="30" text-anchor="middle" font-size="16" font-family="Georgia, serif" fill="#fff">X</text></svg>
+        <strong>PDF to Excel</strong>
+        <span>Pull data straight from PDFs into Excel spreadsheets in a few short seconds.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="fromword">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="22" height="28" rx="3" fill="#2b579a"/><text x="19" y="26" text-anchor="middle" font-size="12" font-family="Georgia, serif" fill="#fff">W</text><path d="M32 24h8M36 20l4 4-4 4" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Word to PDF</strong>
+        <span>Make DOC and DOCX files easy to read by converting them to PDF.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="fromppt">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="22" height="28" rx="3" fill="#d04423"/><text x="19" y="26" text-anchor="middle" font-size="12" font-family="Georgia, serif" fill="#fff">P</text><path d="M32 24h8M36 20l4 4-4 4" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>PowerPoint to PDF</strong>
+        <span>Make PPT and PPTX slideshows easy to view by converting them to PDF.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="fromexcel">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="8" width="22" height="28" rx="3" fill="#217346"/><text x="19" y="26" text-anchor="middle" font-size="12" font-family="Georgia, serif" fill="#fff">X</text><path d="M32 24h8M36 20l4 4-4 4" fill="none" stroke="#6d28d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <strong>Excel to PDF</strong>
+        <span>Make Excel spreadsheets easy to read by converting them to PDF.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="edit">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="10" y="8" width="22" height="30" rx="3" fill="#7c3aed"/><path d="M28 14l8 8-12 12H16v-8z" fill="#c4b5fd"/></svg>
+        <strong>Edit PDF</strong>
+        <span>Add text, images, shapes or freehand annotations to a PDF document. Edit the size, font, and color of the added content.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="png">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="10" width="20" height="26" rx="3" fill="#f0b429"/><rect x="22" y="16" width="16" height="16" rx="3" fill="#e07a12"/><circle cx="28" cy="22" r="2" fill="#fff"/></svg>
+        <strong>PDF to JPG</strong>
+        <span>Convert each PDF page into a JPG or extract all images contained in a PDF.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="images">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="12" width="18" height="16" rx="3" fill="#f0b429"/><circle cx="14" cy="18" r="2" fill="#fff"/><rect x="20" y="18" width="20" height="22" rx="3" fill="#6d28d9"/></svg>
+        <strong>JPG to PDF</strong>
+        <span>Convert JPG images to PDF in seconds. Easily adjust orientation and margins.</span>
+      </button>
+      <button type="button" class="tool-card" data-mode-btn="resize">
+        <svg class="tool-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="12" y="8" width="24" height="32" rx="3" fill="#6d28d9"/><rect x="17" y="14" width="14" height="18" rx="1" fill="none" stroke="#fff" stroke-width="1.6"/></svg>
+        <strong>Page size</strong>
+        <span>Give every page a paper size, a margin, and an optional line border.</span>
+      </button>
+    </div>
+  </section>
+
+  <div class="work">
     <main class="workspace">
-      <section data-panel="images">
+      <section data-panel="images" hidden>
         <div class="panel-head">
           <div>
-            <h2>Images to PDF</h2>
-            <p class="lede">Turn up to 20 pictures into one PDF. Set the paper size, the margin, and a border, then download.</p>
-            <p class="count" id="imageCount">0 of 20 pictures</p>
+            <h2>JPG to PDF</h2>
+            <p class="lede">Convert JPG images to PDF in seconds. Easily adjust orientation and margins. PNG and WebP work too.</p>
+            <p class="count" id="imageCount">0 pictures</p>
           </div>
-          <button type="button" class="text-btn" id="clearImages">Clear</button>
+          <button type="button" class="text-btn" data-clear="images">Clear</button>
         </div>
         <div class="drop" id="imageDrop" tabindex="0" aria-label="Drop pictures to add them">
           <div class="drop-copy">
             <strong>Drop pictures here</strong>
-            <span>PNG, JPG, or WebP. Up to 20.</span>
+            <span>JPG, PNG, or WebP.</span>
           </div>
           <div class="drop-actions">
             <button type="button" class="browse" id="browseImages">Browse</button>
@@ -54,11 +124,11 @@
       <section data-panel="merge" hidden>
         <div class="panel-head">
           <div>
-            <h2>Merge PDFs</h2>
-            <p class="lede">Join PDFs in the order you choose. Drag a file, or use the arrows, to change the order.</p>
+            <h2>Merge PDF</h2>
+            <p class="lede">Combine PDFs in the order you want. Drag a file, or use the arrows, to change the order.</p>
             <p class="count" id="mergeCount">0 files</p>
           </div>
-          <button type="button" class="text-btn" id="clearMerge">Clear</button>
+          <button type="button" class="text-btn" data-clear="merge">Clear</button>
         </div>
         <div class="drop" id="mergeDrop" tabindex="0" aria-label="Drop PDFs to merge">
           <div class="drop-copy">
@@ -74,14 +144,270 @@
         <div class="thumbs" id="mergeList" data-reorder="merge"></div>
       </section>
 
+      <section data-panel="split" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Split PDF</h2>
+            <p class="lede">Separate every page into its own PDF, or save one range as a single file.</p>
+            <p class="count" id="splitCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="split">Clear</button>
+        </div>
+        <div class="drop" id="splitDrop" tabindex="0" aria-label="Drop a PDF to split">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>Every page becomes its own file, or pick a range.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseSplit">Browse</button>
+            <button type="button" class="quiet" data-sample="split">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="splitInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="splitCard"></div>
+      </section>
+
+      <section data-panel="compress" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Compress PDF</h2>
+            <p class="lede">Reduce the file size. Keep text for a light pass, or flatten pages when you need a smaller file.</p>
+            <p class="count" id="compressCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="compress">Clear</button>
+        </div>
+        <div class="drop" id="compressDrop" tabindex="0" aria-label="Drop a PDF to compress">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>Choose how small it should get in the side panel.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseCompress">Browse</button>
+            <button type="button" class="quiet" data-sample="compress">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="compressInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="compressCard"></div>
+      </section>
+
+      <section data-panel="toword" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PDF to Word</h2>
+            <p class="lede">Selectable text is copied into a DOCX, page by page. Scanned pages without text stay blank.</p>
+            <p class="count" id="towordCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="toword">Clear</button>
+        </div>
+        <div class="drop" id="towordDrop" tabindex="0" aria-label="Drop a PDF to convert to Word">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>The download is a DOCX file.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseToword">Browse</button>
+            <button type="button" class="quiet" data-sample="toword">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="towordInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="towordCard"></div>
+      </section>
+
+      <section data-panel="toppt" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PDF to PowerPoint</h2>
+            <p class="lede">Each page becomes a slide in a PPTX slideshow.</p>
+            <p class="count" id="topptCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="toppt">Clear</button>
+        </div>
+        <div class="drop" id="topptDrop" tabindex="0" aria-label="Drop a PDF to convert to PowerPoint">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>The download is a PPTX file.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseToppt">Browse</button>
+            <button type="button" class="quiet" data-sample="toppt">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="topptInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="topptCard"></div>
+      </section>
+
+      <section data-panel="toexcel" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PDF to Excel</h2>
+            <p class="lede">Text lines are placed into spreadsheet rows. Columns follow wide gaps on the page.</p>
+            <p class="count" id="toexcelCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="toexcel">Clear</button>
+        </div>
+        <div class="drop" id="toexcelDrop" tabindex="0" aria-label="Drop a PDF to convert to Excel">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>The download is an XLSX file.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseToexcel">Browse</button>
+            <button type="button" class="quiet" data-sample="toexcel">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="toexcelInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="toexcelCard"></div>
+      </section>
+
+      <section data-panel="fromword" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Word to PDF</h2>
+            <p class="lede">Text from a DOCX is laid out on PDF pages. Save older DOC files as DOCX first.</p>
+            <p class="count" id="fromwordCount">No document yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="fromword">Clear</button>
+        </div>
+        <div class="drop" id="fromwordDrop" tabindex="0" aria-label="Drop a Word document">
+          <div class="drop-copy">
+            <strong>Drop a Word file here</strong>
+            <span>DOCX works directly.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseFromword">Browse</button>
+          </div>
+        </div>
+        <input id="fromwordInput" type="file" accept=".doc,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" hidden>
+        <div class="rows" id="fromwordCard"></div>
+      </section>
+
+      <section data-panel="fromppt" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PowerPoint to PDF</h2>
+            <p class="lede">Each PPTX slide becomes a PDF page, including pictures on the slide.</p>
+            <p class="count" id="frompptCount">No presentation yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="fromppt">Clear</button>
+        </div>
+        <div class="drop" id="frompptDrop" tabindex="0" aria-label="Drop a PowerPoint file">
+          <div class="drop-copy">
+            <strong>Drop a PowerPoint file here</strong>
+            <span>PPTX works directly.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseFromppt">Browse</button>
+          </div>
+        </div>
+        <input id="frompptInput" type="file" accept=".ppt,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+        <div class="rows" id="frompptCard"></div>
+      </section>
+
+      <section data-panel="fromexcel" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Excel to PDF</h2>
+            <p class="lede">The first sheet is drawn as a table on PDF pages. Save older XLS files as XLSX first.</p>
+            <p class="count" id="fromexcelCount">No spreadsheet yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="fromexcel">Clear</button>
+        </div>
+        <div class="drop" id="fromexcelDrop" tabindex="0" aria-label="Drop an Excel file">
+          <div class="drop-copy">
+            <strong>Drop an Excel file here</strong>
+            <span>XLSX works directly.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseFromexcel">Browse</button>
+          </div>
+        </div>
+        <input id="fromexcelInput" type="file" accept=".xls,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+        <div class="rows" id="fromexcelCard"></div>
+      </section>
+
+      <section data-panel="edit" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Edit PDF</h2>
+            <p class="lede">Add text, a picture, a shape, or a freehand line. Size, font, and color apply to what you add.</p>
+            <p class="count" id="editCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="edit">Clear</button>
+        </div>
+        <div class="drop" id="editDrop" tabindex="0" aria-label="Drop a PDF to edit">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>Then choose a tool and mark the page.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseEdit">Browse</button>
+            <button type="button" class="quiet" data-sample="edit">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="editInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="editCard"></div>
+        <div id="editStage" hidden>
+          <div class="editor-bar">
+            <button type="button" class="tool-btn is-on" data-edit-tool="text">Text</button>
+            <button type="button" class="tool-btn" data-edit-tool="shape">Shape</button>
+            <button type="button" class="tool-btn" data-edit-tool="draw">Draw</button>
+            <button type="button" class="tool-btn" data-edit-tool="image">Image</button>
+            <input id="editText" type="text" value="Note" maxlength="80" aria-label="Text to add">
+            <label>Size <input id="editSize" type="number" min="8" max="72" value="18"></label>
+            <label>Font
+              <select id="editFont">
+                <option value="helvetica">Helvetica</option>
+                <option value="times">Times</option>
+                <option value="courier">Courier</option>
+              </select>
+            </label>
+            <label>Color <input id="editColor" type="color" value="#5b21b6"></label>
+            <button type="button" class="quiet" id="editUndo">Undo</button>
+            <button type="button" class="quiet" id="editPrev">Previous</button>
+            <span id="editPageLabel">1 / 1</span>
+            <button type="button" class="quiet" id="editNext">Next</button>
+          </div>
+          <div class="editor-stage">
+            <div class="editor-canvas-wrap">
+              <canvas id="editCanvas"></canvas>
+              <canvas id="editOverlay"></canvas>
+            </div>
+          </div>
+          <input id="editImageInput" type="file" accept="image/png,image/jpeg,.png,.jpg,.jpeg" hidden>
+        </div>
+      </section>
+
+      <section data-panel="png" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PDF to JPG</h2>
+            <p class="lede">Save each page as a JPG. Switch to PNG in the side panel when you want a lossless picture.</p>
+            <p class="count" id="pngCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" data-clear="png">Clear</button>
+        </div>
+        <div class="drop" id="pngDrop" tabindex="0" aria-label="Drop a PDF to export">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>One page saves as a picture. More pages save as a zip.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browsePng">Browse</button>
+            <button type="button" class="quiet" id="samplePng">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="pngInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="pngCard"></div>
+      </section>
+
       <section data-panel="resize" hidden>
         <div class="panel-head">
           <div>
-            <h2>Size and border</h2>
+            <h2>Page size</h2>
             <p class="lede">Give every page a paper size, a margin, and an optional line border. Keep original size when you only want a border.</p>
             <p class="count" id="resizeCount">No PDF yet</p>
           </div>
-          <button type="button" class="text-btn" id="clearResize">Clear</button>
+          <button type="button" class="text-btn" data-clear="resize">Clear</button>
         </div>
         <div class="drop" id="resizeDrop" tabindex="0" aria-label="Drop a PDF to resize">
           <div class="drop-copy">
@@ -96,38 +422,15 @@
         <input id="resizeInput" type="file" accept="application/pdf,.pdf" hidden>
         <div class="rows" id="resizeCard"></div>
       </section>
-
-      <section data-panel="png" hidden>
-        <div class="panel-head">
-          <div>
-            <h2>PDF to PNG</h2>
-            <p class="lede">Save pages as PNG pictures. To change paper size or add a border first, use Size and border, then come back here.</p>
-            <p class="count" id="pngCount">No PDF yet</p>
-          </div>
-          <button type="button" class="text-btn" id="clearPng">Clear</button>
-        </div>
-        <div class="drop" id="pngDrop" tabindex="0" aria-label="Drop a PDF to export">
-          <div class="drop-copy">
-            <strong>Drop one PDF here</strong>
-            <span>One page saves as a PNG. More pages save as a zip.</span>
-          </div>
-          <div class="drop-actions">
-            <button type="button" class="browse" id="browsePng">Browse</button>
-            <button type="button" class="quiet" id="samplePng">Use a sample PDF</button>
-          </div>
-        </div>
-        <input id="pngInput" type="file" accept="application/pdf,.pdf" hidden>
-        <div class="rows" id="pngCard"></div>
-      </section>
     </main>
 
     <form class="settings" id="settingsForm">
       <div class="settings-scroll">
         <h2>Page</h2>
-        <div class="preview-wrap">
+        <div class="preview-wrap" data-modes="images merge resize png split compress toword toppt toexcel">
           <canvas id="preview" width="560" height="792" aria-label="Page preview"></canvas>
         </div>
-        <p id="previewMeta">Add a picture to preview the page.</p>
+        <p id="previewMeta" data-modes="images merge resize png split compress toword toppt toexcel">Add a picture to preview the page.</p>
         <p class="mode-hint" id="modeHint"></p>
 
         <label class="field" data-modes="images">
@@ -195,7 +498,7 @@
               <input id="framePt" type="number" min="0" max="20" step="0.5" value="0">
             </label>
             <label>Color
-              <input id="frameColor" type="color" value="#241c16">
+              <input id="frameColor" type="color" value="#5b21b6">
             </label>
           </div>
         </div>
@@ -225,6 +528,14 @@
         </fieldset>
 
         <fieldset class="field" data-modes="png">
+          <legend>Picture type</legend>
+          <div class="choices">
+            <label><input type="radio" name="imageFormat" value="jpeg" checked> JPG</label>
+            <label><input type="radio" name="imageFormat" value="png"> PNG</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field" data-modes="png">
           <legend>Resolution</legend>
           <div class="choices">
             <label><input type="radio" name="dpi" value="72"> 72 dpi</label>
@@ -241,6 +552,31 @@
             <input id="pageTo" type="number" min="1" step="1" value="1">
           </label>
         </div>
+
+        <fieldset class="field" data-modes="split">
+          <legend>Split</legend>
+          <div class="choices">
+            <label><input type="radio" name="splitMode" value="each" checked> Every page</label>
+            <label><input type="radio" name="splitMode" value="range"> Page range</label>
+          </div>
+        </fieldset>
+        <div class="field split" id="splitRange" data-modes="split" hidden>
+          <label>From page
+            <input id="splitFrom" type="number" min="1" step="1" value="1">
+          </label>
+          <label>To page
+            <input id="splitTo" type="number" min="1" step="1" value="1">
+          </label>
+        </div>
+
+        <fieldset class="field" data-modes="compress">
+          <legend>Size</legend>
+          <div class="choices">
+            <label><input type="radio" name="compressLevel" value="light"> Keep text</label>
+            <label><input type="radio" name="compressLevel" value="balanced" checked> Balanced</label>
+            <label><input type="radio" name="compressLevel" value="small"> Smallest</label>
+          </div>
+        </fieldset>
 
         <label class="field">
           File name
@@ -263,6 +599,7 @@
   <script src="vendor/pdf.min.js"></script>
   <script src="vendor/jszip.min.js"></script>
   <script src="js/engine.js"></script>
+  <script src="js/office.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

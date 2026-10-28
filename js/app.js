@@ -6,6 +6,7 @@
   var MAX_PNG_PAGES = 40;
 
   var MODES = {
+    home: { file: 'images.pdf', go: 'Make PDF', hint: '' },
     images: {
       file: 'images.pdf',
       go: 'Make PDF',
@@ -16,32 +17,118 @@
       go: 'Merge PDFs',
       hint: 'Pages are copied in the order shown. They are not resized.'
     },
+    split: {
+      file: 'split.pdf',
+      go: 'Split PDF',
+      hint: 'Every page downloads as its own PDF inside a zip. A page range downloads as one PDF.'
+    },
+    compress: {
+      file: 'compressed.pdf',
+      go: 'Compress PDF',
+      hint: 'Keep text repacks the file. Balanced and Smallest turn pages into pictures, which shrinks scans.'
+    },
+    toword: {
+      file: 'document.docx',
+      go: 'Convert to Word',
+      hint: 'Selectable text is copied into a Word document. A scan without text cannot be edited.'
+    },
+    toppt: {
+      file: 'slides.pptx',
+      go: 'Convert to PowerPoint',
+      hint: 'Each page becomes one slide.'
+    },
+    toexcel: {
+      file: 'sheet.xlsx',
+      go: 'Convert to Excel',
+      hint: 'Each line of text becomes a row. Wide gaps become new columns.'
+    },
+    fromword: {
+      file: 'document.pdf',
+      go: 'Convert to PDF',
+      hint: 'DOCX text is placed on A4 pages. Older DOC files need to be saved as DOCX first.'
+    },
+    fromppt: {
+      file: 'slides.pdf',
+      go: 'Convert to PDF',
+      hint: 'Each slide becomes a PDF page. Pictures on the slide are kept.'
+    },
+    fromexcel: {
+      file: 'sheet.pdf',
+      go: 'Convert to PDF',
+      hint: 'The first sheet is drawn as a table. Older XLS files need to be saved as XLSX first.'
+    },
+    edit: {
+      file: 'edited.pdf',
+      go: 'Save PDF',
+      hint: 'Click the page for text or a picture. Drag for a shape or a freehand line.'
+    },
+    png: {
+      file: 'pages.jpg',
+      go: 'Export JPG',
+      hint: 'One page downloads as a picture. Several pages download as a zip.'
+    },
     resize: {
       file: 'resized.pdf',
       go: 'Apply size and border',
       hint: 'Keep original size to add a margin without shrinking the pages. Other sizes fit each page onto that paper.'
-    },
-    png: {
-      file: 'pages',
-      go: 'Export PNG',
-      hint: 'One page downloads as a PNG. Several pages download as a zip. Change paper size under Size and border first if you need to.'
     }
   };
 
+  var SLOTS = {
+    resize: { count: 'resizeCount', card: 'resizeCard', drop: 'resizeDrop', empty: 'No PDF yet' },
+    png: { count: 'pngCount', card: 'pngCard', drop: 'pngDrop', empty: 'No PDF yet', range: ['pageFrom', 'pageTo'] },
+    split: { count: 'splitCount', card: 'splitCard', drop: 'splitDrop', empty: 'No PDF yet', range: ['splitFrom', 'splitTo'] },
+    compress: { count: 'compressCount', card: 'compressCard', drop: 'compressDrop', empty: 'No PDF yet' },
+    toword: { count: 'towordCount', card: 'towordCard', drop: 'towordDrop', empty: 'No PDF yet' },
+    toppt: { count: 'topptCount', card: 'topptCard', drop: 'topptDrop', empty: 'No PDF yet' },
+    toexcel: { count: 'toexcelCount', card: 'toexcelCard', drop: 'toexcelDrop', empty: 'No PDF yet' },
+    edit: { count: 'editCount', card: 'editCard', drop: 'editDrop', empty: 'No PDF yet' },
+    fromword: { count: 'fromwordCount', card: 'fromwordCard', drop: 'fromwordDrop', empty: 'No document yet', office: true },
+    fromppt: { count: 'frompptCount', card: 'frompptCard', drop: 'frompptDrop', empty: 'No presentation yet', office: true },
+    fromexcel: { count: 'fromexcelCount', card: 'fromexcelCard', drop: 'fromexcelDrop', empty: 'No spreadsheet yet', office: true }
+  };
+
   var state = {
-    mode: 'images',
+    mode: 'home',
     busy: false,
     images: [],
     merge: [],
     resize: null,
-    png: null
+    png: null,
+    split: null,
+    compress: null,
+    toword: null,
+    toppt: null,
+    toexcel: null,
+    fromword: null,
+    fromppt: null,
+    fromexcel: null,
+    edit: null
   };
 
   var filenames = {
+    home: 'images.pdf',
     images: 'images.pdf',
     merge: 'merged.pdf',
-    resize: 'resized.pdf',
-    png: 'pages'
+    split: 'split.pdf',
+    compress: 'compressed.pdf',
+    toword: 'document.docx',
+    toppt: 'slides.pptx',
+    toexcel: 'sheet.xlsx',
+    fromword: 'document.pdf',
+    fromppt: 'slides.pdf',
+    fromexcel: 'sheet.pdf',
+    edit: 'edited.pdf',
+    png: 'pages.jpg',
+    resize: 'resized.pdf'
+  };
+
+  var editor = {
+    tool: 'text',
+    page: 1,
+    marks: [],
+    drag: null,
+    image: null
   };
 
   var saveUrl = '';
@@ -126,19 +213,22 @@
       marginBottomMm: clamp(parseFloat($('marginBottom').value), 0, 80, 12),
       marginLeftMm: clamp(parseFloat($('marginLeft').value), 0, 80, 12),
       framePt: clamp(parseFloat($('framePt').value), 0, 20, 0),
-      frameColor: $('frameColor').value || '#241c16',
+      frameColor: $('frameColor').value || '#5b21b6',
       fit: fit,
       background: $('background').value || '#ffffff',
       quality: quality,
       dpi: dpi,
       filename: $('filename').value,
-      title: baseName($('filename').value)
+      title: baseName($('filename').value),
+      imageFormat: radioValue('imageFormat', 'jpeg') === 'png' ? 'png' : 'jpeg',
+      splitMode: radioValue('splitMode', 'each') === 'range' ? 'range' : 'each',
+      compressLevel: radioValue('compressLevel', 'balanced')
     };
   }
 
   function baseName(name) {
     var clean = String(name || '').replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'download';
-    return clean.replace(/\.(pdf|png|zip)$/i, '');
+    return clean.replace(/\.(pdf|png|jpe?g|zip|docx|pptx|xlsx)$/i, '');
   }
 
   function syncVisibility() {
@@ -158,22 +248,31 @@
       $('customSizeField').hidden = size !== 'custom';
       if (mode === 'resize' && size === 'original') $('fitField').hidden = true;
     }
+    if (mode === 'split' && $('splitRange')) {
+      $('splitRange').hidden = radioValue('splitMode', 'each') !== 'range';
+    }
+    document.body.classList.toggle('is-home', mode === 'home');
+    $('backHome').hidden = mode === 'home';
     $('modeHint').textContent = MODES[mode].hint;
   }
 
   function updateGo() {
     var btn = $('go');
+    var mode = state.mode;
     var ok = false;
-    if (state.mode === 'images') ok = state.images.length > 0;
-    if (state.mode === 'merge') ok = state.merge.length >= 2;
-    if (state.mode === 'resize') ok = !!state.resize;
-    if (state.mode === 'png') ok = !!state.png;
+    if (mode === 'images') ok = state.images.length > 0;
+    else if (mode === 'merge') ok = state.merge.length >= 2;
+    else if (mode === 'edit') ok = !!(state.edit && editor.marks.length);
+    else if (SLOTS[mode]) ok = !!state[mode];
+    var label = MODES[mode].go;
+    if (mode === 'png') label = readSettings().imageFormat === 'png' ? 'Export PNG' : 'Export JPG';
     btn.disabled = state.busy || !ok;
-    btn.textContent = state.busy ? 'Working…' : MODES[state.mode].go;
-    $('clearImages').disabled = state.busy || state.images.length === 0;
-    $('clearMerge').disabled = state.busy || state.merge.length === 0;
-    $('clearResize').disabled = state.busy || !state.resize;
-    $('clearPng').disabled = state.busy || !state.png;
+    btn.textContent = state.busy ? 'Working…' : label;
+    document.querySelectorAll('[data-clear]').forEach(function (button) {
+      var key = button.dataset.clear;
+      var empty = key === 'images' ? state.images.length === 0 : key === 'merge' ? state.merge.length === 0 : !state[key];
+      button.disabled = state.busy || empty;
+    });
   }
 
   function setBusy(busy) {
@@ -275,7 +374,7 @@
       }
     }
     renderImages();
-    if (limited) toast('Twenty pictures is the limit for one PDF. Make a second PDF and merge them.');
+    if (limited) toast('Only 20 pictures can go in one PDF.');
     else if (failed.length) toast('Skipped ' + failed[0] + '. This browser could not read it.');
     else if (ignored) toast('Skipped a file that was not a picture.');
     return { added: added, limited: limited };
@@ -284,7 +383,7 @@
   function renderImages() {
     var list = $('imageList');
     var count = state.images.length;
-    $('imageCount').textContent = count + ' of ' + MAX_IMAGES + ' pictures';
+    $('imageCount').textContent = count + (count === 1 ? ' picture' : ' pictures');
     $('imageDrop').classList.toggle('compact', count > 0);
     list.innerHTML = state.images.map(function (item, index) {
       return (
@@ -404,6 +503,7 @@
     }
     var previous = state[slot];
     if (previous && previous.previewUrl) URL.revokeObjectURL(previous.previewUrl);
+    if (previous && previous.handle) previous.handle.destroy();
     state[slot] = {
       name: file.name,
       file: file,
@@ -415,17 +515,32 @@
       preview: preview,
       previewUrl: preview ? preview.url : ''
     };
-    if (slot === 'png') {
+    var range = SLOTS[slot] && SLOTS[slot].range;
+    if (range) {
       var end = Math.min(info.pageCount, MAX_PNG_PAGES);
-      $('pageFrom').value = '1';
-      $('pageTo').value = String(end);
-      $('pageFrom').max = String(info.pageCount);
-      $('pageTo').max = String(info.pageCount);
-      if (info.pageCount > MAX_PNG_PAGES) {
+      $(range[0]).value = '1';
+      $(range[1]).value = String(end);
+      $(range[0]).max = String(info.pageCount);
+      $(range[1]).max = String(info.pageCount);
+      if (info.pageCount > MAX_PNG_PAGES && slot === 'png') {
         toast('This PDF has ' + info.pageCount + ' pages. The range is the first ' + MAX_PNG_PAGES + '.');
       }
     }
-    renderSingle(slot);
+    if (slot === 'edit') prepareEditor();
+    renderSlot(slot);
+  }
+
+  function setOfficeFile(slot, file) {
+    if (!file) return;
+    var ok = slot === 'fromword' ? /\.docx?$/i.test(file.name)
+      : slot === 'fromppt' ? /\.pptx?$/i.test(file.name)
+        : /\.xlsx?$/i.test(file.name);
+    if (!ok) {
+      toast('That file is not the right type for this tool.');
+      return;
+    }
+    state[slot] = { name: file.name, file: file, size: file.size };
+    renderSlot(slot);
   }
 
   function loadUrl(url) {
@@ -437,24 +552,32 @@
     });
   }
 
-  function renderSingle(slot) {
+  function renderSlot(slot) {
+    var ui = SLOTS[slot];
     var doc = state[slot];
-    var countId = slot === 'resize' ? 'resizeCount' : 'pngCount';
-    var cardId = slot === 'resize' ? 'resizeCard' : 'pngCard';
-    var dropId = slot === 'resize' ? 'resizeDrop' : 'pngDrop';
     if (!doc) {
-      $(countId).textContent = 'No PDF yet';
-      $(cardId).innerHTML = '';
-      $(dropId).classList.remove('compact');
+      $(ui.count).textContent = ui.empty;
+      $(ui.card).innerHTML = '';
+      $(ui.drop).classList.remove('compact');
+    } else if (ui.office) {
+      $(ui.count).textContent = formatBytes(doc.size);
+      $(ui.drop).classList.add('compact');
+      $(ui.card).innerHTML =
+        '<article class="row"><span class="badge">1</span><div><p class="name">' +
+        escapeHtml(doc.name) + '</p><p class="meta">' + formatBytes(doc.size) + '</p></div></article>';
     } else {
-      $(countId).textContent = doc.pageCount + (doc.pageCount === 1 ? ' page' : ' pages') + ' · ' + formatBytes(doc.size);
-      $(dropId).classList.add('compact');
-      $(cardId).innerHTML =
-        '<article class="row"><span class="badge">' + doc.pageCount + '</span><div><p class="name">' +
-        escapeHtml(doc.name) + '</p><p class="meta">' +
+      var picture = doc.previewUrl
+        ? '<img alt="" src="' + doc.previewUrl + '">'
+        : '';
+      $(ui.count).textContent = doc.pageCount + (doc.pageCount === 1 ? ' page' : ' pages') + ' · ' + formatBytes(doc.size);
+      $(ui.drop).classList.add('compact');
+      $(ui.card).innerHTML =
+        '<article class="row' + (picture ? ' has-preview' : '') + '">' + picture +
+        '<div><p class="name">' + escapeHtml(doc.name) + '</p><p class="meta">' +
         doc.pageCount + (doc.pageCount === 1 ? ' page' : ' pages') + ' · ' + formatBytes(doc.size) +
         '</p></div></article>';
     }
+    if (slot === 'edit' && $('editStage')) $('editStage').hidden = !doc;
     updateGo();
     queuePaint();
   }
@@ -550,8 +673,14 @@
   function clearSlot(slot) {
     var doc = state[slot];
     if (doc && doc.previewUrl) URL.revokeObjectURL(doc.previewUrl);
+    if (doc && doc.handle) doc.handle.destroy();
     state[slot] = null;
-    renderSingle(slot);
+    if (slot === 'edit') {
+      editor.marks = [];
+      editor.page = 1;
+      editor.drag = null;
+    }
+    renderSlot(slot);
   }
 
   function queuePaint() {
@@ -587,19 +716,22 @@
       return;
     }
 
-    if (state.mode === 'png') {
-      var pngDoc = state.png;
+    if (state.mode === 'png' || state.mode === 'split' || state.mode === 'compress' || state.mode === 'toword' || state.mode === 'toppt' || state.mode === 'toexcel') {
+      var pngDoc = state[state.mode];
       if (!pngDoc || !pngDoc.preview) {
         drawBlank(canvas, ctx, cssW, dpr, 210 * FolioEngine.MM, 297 * FolioEngine.MM, '#ffffff');
         meta.textContent = 'Add a PDF to see the first page.';
         return;
       }
-      var scale = settings.dpi / 72;
-      var pxW = Math.round(pngDoc.width * scale);
-      var pxH = Math.round(pngDoc.height * scale);
       drawPicturePage(canvas, ctx, cssW, dpr, pngDoc.preview, '#ffffff');
-      meta.textContent = settings.dpi + ' dpi · about ' + pxW + ' × ' + pxH + ' px · pages ' +
-        ($('pageFrom').value || '1') + '–' + ($('pageTo').value || '1');
+      if (state.mode === 'png') {
+        var scale = settings.dpi / 72;
+        meta.textContent = (settings.imageFormat === 'png' ? 'PNG' : 'JPG') + ' · ' + settings.dpi + ' dpi · about ' +
+          Math.round(pngDoc.width * scale) + ' × ' + Math.round(pngDoc.height * scale) + ' px · pages ' +
+          ($('pageFrom').value || '1') + '–' + ($('pageTo').value || '1');
+      } else {
+        meta.textContent = pngDoc.name + ' · ' + pngDoc.pageCount + (pngDoc.pageCount === 1 ? ' page' : ' pages');
+      }
       return;
     }
 
@@ -654,7 +786,7 @@
     }
     var m = FolioEngine.margins(settings);
     ctx.save();
-    ctx.strokeStyle = '#c4491d';
+    ctx.strokeStyle = '#6d28d9';
     ctx.globalAlpha = 0.85;
     ctx.setLineDash([4, 4]);
     ctx.lineWidth = 1;
@@ -725,23 +857,26 @@
       var y = 16 + (sheets - 1 - i) * 8;
       var w = cssW - 56;
       var h = cssH - 42;
-      ctx.fillStyle = i === 0 ? '#fffaf3' : '#f0e4d4';
-      ctx.strokeStyle = 'rgba(36,28,22,0.18)';
+      ctx.fillStyle = i === 0 ? '#ffffff' : '#f3eefb';
+      ctx.strokeStyle = 'rgba(76,29,149,0.18)';
       ctx.lineWidth = 1;
       ctx.fillRect(x, y, w, h);
       ctx.strokeRect(x, y, w, h);
     }
-    ctx.fillStyle = '#241c16';
+    ctx.fillStyle = '#241433';
     ctx.font = '16px Palatino, Georgia, serif';
     ctx.fillText(pages ? pages + (pages === 1 ? ' page' : ' pages') : 'No pages yet', 34, cssH * 0.48);
   }
 
   function addIncoming(files) {
-    if (state.busy || !files.length) return;
+    if (state.busy || !files.length || state.mode === 'home') return;
     if (state.mode === 'images') return addImageFiles(files);
     if (state.mode === 'merge') return addMergeFiles(files);
-    if (state.mode === 'resize') return setSinglePdf('resize', files[0]).catch(showError);
-    return setSinglePdf('png', files[0]).catch(showError);
+    var slot = SLOTS[state.mode];
+    if (!slot) return;
+    if (slot.office) return setOfficeFile(state.mode, files[0]);
+    if ((state.mode !== 'merge' && state.mode !== 'images') && files.length > 1) toast('Using the first file.');
+    return setSinglePdf(state.mode, files[0]).catch(showError);
   }
 
   function showError(err) {
@@ -759,6 +894,15 @@
       if (state.mode === 'images') await makeImages(settings);
       else if (state.mode === 'merge') await makeMerge(settings);
       else if (state.mode === 'resize') await makeResize(settings);
+      else if (state.mode === 'split') await makeSplit(settings);
+      else if (state.mode === 'compress') await makeCompress(settings);
+      else if (state.mode === 'toword') await makeToWord(settings);
+      else if (state.mode === 'toppt') await makeToPpt(settings);
+      else if (state.mode === 'toexcel') await makeToExcel(settings);
+      else if (state.mode === 'fromword') await makeFromWord(settings);
+      else if (state.mode === 'fromppt') await makeFromPpt(settings);
+      else if (state.mode === 'fromexcel') await makeFromExcel(settings);
+      else if (state.mode === 'edit') await makeEdit(settings);
       else await makePng(settings);
     } catch (err) {
       setResult(err && err.message ? err.message : 'Something went wrong.', 'error');
@@ -805,16 +949,19 @@
     }
     $('pageFrom').value = String(from);
     $('pageTo').value = String(to);
-    var parts = await FolioEngine.pdfToPngs(state.png.bytes, {
+    var picture = settings.imageFormat === 'png' ? 'PNG' : 'JPG';
+    var parts = await FolioEngine.pdfToImages(state.png.bytes, {
       dpi: settings.dpi,
       from: from,
       to: to,
       background: settings.background,
-      baseName: baseName(settings.filename)
+      baseName: baseName(settings.filename),
+      mime: settings.imageFormat === 'png' ? 'image/png' : 'image/jpeg',
+      jpegQuality: settings.dpi >= 300 ? 0.9 : 0.86
     }, report);
     if (parts.length === 1) {
       rememberDownload(parts[0].blob, parts[0].name);
-      setResult('PNG ready. ' + parts[0].width + ' × ' + parts[0].height + ' px, ' + formatBytes(parts[0].blob.size) + '.', 'ok');
+      setResult(picture + ' ready. ' + parts[0].width + ' × ' + parts[0].height + ' px, ' + formatBytes(parts[0].blob.size) + '.', 'ok');
       return;
     }
     if (!window.JSZip) throw new Error('The zip tool did not load.');
@@ -822,9 +969,108 @@
     parts.forEach(function (part) { zip.file(part.name, part.blob); });
     var blob = await zip.generateAsync({ type: 'blob' });
     rememberDownload(blob, baseName(settings.filename) + '.zip');
-    var message = 'PNG zip ready. ' + parts.length + ' pictures, ' + formatBytes(blob.size) + '.';
+    var message = picture + ' zip ready. ' + parts.length + ' pictures, ' + formatBytes(blob.size) + '.';
     if (clipped) message += ' Forty pages is the limit for one export.';
     setResult(message, 'ok');
+  }
+
+  async function zipParts(parts, filename) {
+    if (!window.JSZip) throw new Error('The zip tool did not load.');
+    var zip = new JSZip();
+    parts.forEach(function (part) { zip.file(part.name, part.bytes); });
+    return zip.generateAsync({ type: 'blob' });
+  }
+
+  async function makeSplit(settings) {
+    var pageCount = state.split.pageCount;
+    var from = clamp(parseInt($('splitFrom').value, 10), 1, pageCount, 1);
+    var to = clamp(parseInt($('splitTo').value, 10), 1, pageCount, pageCount);
+    if (to < from) {
+      var swap = from;
+      from = to;
+      to = swap;
+    }
+    var result = await FolioEngine.splitPdf(state.split.bytes, {
+      mode: settings.splitMode,
+      from: from,
+      to: to,
+      baseName: baseName(settings.filename)
+    }, report);
+    if (result.parts.length === 1) {
+      rememberDownload(new Blob([result.parts[0].bytes], { type: 'application/pdf' }), result.parts[0].name);
+      setResult('PDF ready. ' + formatBytes(result.parts[0].bytes.byteLength) + '.', 'ok');
+      return;
+    }
+    var blob = await zipParts(result.parts, settings.filename);
+    rememberDownload(blob, baseName(settings.filename) + '.zip');
+    var message = 'Split ready. ' + result.parts.length + ' PDFs, ' + formatBytes(blob.size) + '.';
+    if (result.limited) message += ' The first 40 pages were saved.';
+    setResult(message, 'ok');
+  }
+
+  async function makeCompress(settings) {
+    var result = await FolioEngine.compressPdf(state.compress.bytes, {
+      level: settings.compressLevel,
+      title: baseName(settings.filename)
+    }, report);
+    var name = baseName(settings.filename) + '.pdf';
+    rememberDownload(new Blob([result.bytes], { type: 'application/pdf' }), name);
+    var before = state.compress.size;
+    var after = result.bytes.byteLength;
+    var message = result.smaller
+      ? 'Compressed PDF ready. ' + formatBytes(before) + ' down to ' + formatBytes(after) + '.'
+      : 'PDF ready. It was already about as small as this method can make it (' + formatBytes(after) + ').';
+    if (result.limited) message += ' The first 40 pages were included.';
+    setResult(message, 'ok');
+  }
+
+  async function makeToWord(settings) {
+    var result = await FolioOffice.pdfTextToDocx(state.toword.bytes, report);
+    rememberDownload(result.blob, baseName(settings.filename) + '.docx');
+    var message = 'Word file ready. ' + result.pages + (result.pages === 1 ? ' page, ' : ' pages, ') + formatBytes(result.blob.size) + '.';
+    if (result.limited) message += ' The first 40 pages were included.';
+    setResult(message, 'ok');
+  }
+
+  async function makeToPpt(settings) {
+    var result = await FolioOffice.pdfToPptx(state.toppt.bytes, report);
+    rememberDownload(result.blob, baseName(settings.filename) + '.pptx');
+    var message = 'PowerPoint ready. ' + result.pages + (result.pages === 1 ? ' slide, ' : ' slides, ') + formatBytes(result.blob.size) + '.';
+    if (result.limited) message += ' The first 40 pages were included.';
+    setResult(message, 'ok');
+  }
+
+  async function makeToExcel(settings) {
+    var result = await FolioOffice.pdfTextToXlsx(state.toexcel.bytes, report);
+    rememberDownload(result.blob, baseName(settings.filename) + '.xlsx');
+    var message = 'Excel file ready. ' + result.pages + (result.pages === 1 ? ' page, ' : ' pages, ') + formatBytes(result.blob.size) + '.';
+    if (result.limited) message += ' The first 40 pages were included.';
+    setResult(message, 'ok');
+  }
+
+  async function makeFromWord(settings) {
+    var result = await FolioOffice.docxToPdf(state.fromword.file, report);
+    rememberDownload(new Blob([result.bytes], { type: 'application/pdf' }), baseName(settings.filename) + '.pdf');
+    setResult('PDF ready. ' + result.pageCount + (result.pageCount === 1 ? ' page, ' : ' pages, ') + formatBytes(result.bytes.byteLength) + '.', 'ok');
+  }
+
+  async function makeFromPpt(settings) {
+    var result = await FolioOffice.pptxToPdf(state.fromppt.file, report);
+    rememberDownload(new Blob([result.bytes], { type: 'application/pdf' }), baseName(settings.filename) + '.pdf');
+    setResult('PDF ready. ' + result.pageCount + (result.pageCount === 1 ? ' page, ' : ' pages, ') + formatBytes(result.bytes.byteLength) + '.', 'ok');
+  }
+
+  async function makeFromExcel(settings) {
+    var result = await FolioOffice.xlsxToPdf(state.fromexcel.file, report);
+    rememberDownload(new Blob([result.bytes], { type: 'application/pdf' }), baseName(settings.filename) + '.pdf');
+    setResult('PDF ready. ' + result.pageCount + (result.pageCount === 1 ? ' page, ' : ' pages, ') + formatBytes(result.bytes.byteLength) + '.', 'ok');
+  }
+
+  async function makeEdit(settings) {
+    if (!editor.marks.length) throw new Error('Add text, a shape, a drawing, or a picture first.');
+    var result = await FolioEngine.applyAnnotations(state.edit.bytes, editor.marks, report);
+    rememberDownload(new Blob([result.bytes], { type: 'application/pdf' }), baseName(settings.filename) + '.pdf');
+    setResult('PDF ready. ' + editor.marks.length + (editor.marks.length === 1 ? ' addition, ' : ' additions, ') + formatBytes(result.bytes.byteLength) + '.', 'ok');
   }
 
   function wireDrop(drop, input) {
@@ -919,43 +1165,367 @@
     await addMergeFiles([a, b]);
   }
 
+  function prepareEditor() {
+    editor.page = 1;
+    editor.marks = [];
+    editor.drag = null;
+    if (state.edit && state.edit.handle) {
+      state.edit.handle.destroy();
+      state.edit.handle = null;
+    }
+    $('editStage').hidden = !state.edit;
+    if (state.edit) drawEditorPage().catch(showError);
+  }
+
+  async function drawEditorPage() {
+    if (!state.edit || !window.pdfjsLib) return;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
+    if (!state.edit.handle) {
+      state.edit.handle = await pdfjsLib.getDocument({ data: state.edit.bytes.slice(0) }).promise;
+    }
+    var pdf = state.edit.handle;
+    var page = await pdf.getPage(editor.page);
+    var base = page.getViewport({ scale: 1 });
+    var wrap = $('editCanvas').parentElement.clientWidth || 640;
+    var scale = Math.min(2, Math.max(0.4, (wrap - 4) / base.width));
+    var viewport = page.getViewport({ scale: scale });
+    var canvas = $('editCanvas');
+    canvas.width = Math.floor(viewport.width);
+    canvas.height = Math.floor(viewport.height);
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+    var overlay = $('editOverlay');
+    overlay.width = canvas.width;
+    overlay.height = canvas.height;
+    state.edit.view = { scale: scale, width: base.width, height: base.height };
+    $('editPageLabel').textContent = editor.page + ' / ' + pdf.numPages;
+    $('editPrev').disabled = editor.page <= 1;
+    $('editNext').disabled = editor.page >= pdf.numPages;
+    page.cleanup();
+    drawMarks();
+    updateGo();
+  }
+
+  function pointerToPdf(event) {
+    var overlay = $('editOverlay');
+    var rect = overlay.getBoundingClientRect();
+    var view = state.edit && state.edit.view;
+    if (!view || !rect.width) return null;
+    var x = (event.clientX - rect.left) * (overlay.width / rect.width);
+    var y = (event.clientY - rect.top) * (overlay.height / rect.height);
+    return { x: x / view.scale, y: view.height - y / view.scale, cx: x, cy: y };
+  }
+
+  function drawMarks() {
+    var overlay = $('editOverlay');
+    var view = state.edit && state.edit.view;
+    if (!overlay || !view) return;
+    var ctx = overlay.getContext('2d');
+    ctx.clearRect(0, 0, overlay.width, overlay.height);
+    editor.marks.forEach(function (mark) {
+      if (mark.page !== editor.page) return;
+      ctx.strokeStyle = mark.color || '#5b21b6';
+      ctx.fillStyle = mark.color || '#5b21b6';
+      ctx.lineWidth = Math.max(1.5, (mark.thickness || 2) * view.scale);
+      if (mark.type === 'text') {
+        ctx.font = Math.max(10, (mark.size || 18) * view.scale) + 'px ' + (mark.font === 'times' ? 'Times, serif' : mark.font === 'courier' ? 'Courier, monospace' : 'Helvetica, Arial, sans-serif');
+        ctx.fillText(mark.text, mark.x * view.scale, (view.height - mark.y) * view.scale);
+      } else if (mark.type === 'rect') {
+        ctx.globalAlpha = 0.18;
+        ctx.fillRect(mark.x * view.scale, (view.height - mark.y - mark.height) * view.scale, mark.width * view.scale, mark.height * view.scale);
+        ctx.globalAlpha = 1;
+        ctx.strokeRect(mark.x * view.scale, (view.height - mark.y - mark.height) * view.scale, mark.width * view.scale, mark.height * view.scale);
+      } else if (mark.type === 'ink' && mark.points.length) {
+        ctx.beginPath();
+        mark.points.forEach(function (point, index) {
+          var px = point.x * view.scale;
+          var py = (view.height - point.y) * view.scale;
+          if (index) ctx.lineTo(px, py);
+          else ctx.moveTo(px, py);
+        });
+        ctx.stroke();
+      } else if (mark.type === 'image' && mark.image) {
+        ctx.drawImage(mark.image, mark.x * view.scale, (view.height - mark.y - mark.height) * view.scale, mark.width * view.scale, mark.height * view.scale);
+      }
+    });
+    var drag = editor.drag;
+    if (drag && drag.page === editor.page && drag.points) {
+      ctx.strokeStyle = $('editColor').value;
+      ctx.lineWidth = 2 * view.scale;
+      ctx.beginPath();
+      drag.points.forEach(function (point, index) {
+        var px = point.x * view.scale;
+        var py = (view.height - point.y) * view.scale;
+        if (index) ctx.lineTo(px, py);
+        else ctx.moveTo(px, py);
+      });
+      ctx.stroke();
+    }
+  }
+
+  function editorPoint(event) {
+    var point = pointerToPdf(event);
+    if (!point) return null;
+    return { x: point.x, y: point.y };
+  }
+
+  function onEditDown(event) {
+    if (!state.edit || state.busy) return;
+    var point = editorPoint(event);
+    if (!point) return;
+    if (editor.tool === 'text') {
+      var text = $('editText').value.trim();
+      if (!text) {
+        toast('Type the text to place, then click the page.');
+        return;
+      }
+      editor.marks.push({
+        id: uid(),
+        type: 'text',
+        page: editor.page,
+        x: point.x,
+        y: point.y,
+        text: text,
+        size: clamp(parseFloat($('editSize').value), 8, 72, 18),
+        font: $('editFont').value,
+        color: $('editColor').value
+      });
+      drawMarks();
+      updateGo();
+      return;
+    }
+    if (editor.tool === 'image') {
+      if (!editor.image) {
+        $('editImageInput').click();
+        return;
+      }
+      var width = 140;
+      var height = width * (editor.image.height / editor.image.width);
+      editor.marks.push({
+        id: uid(),
+        type: 'image',
+        page: editor.page,
+        x: point.x,
+        y: point.y - height,
+        width: width,
+        height: height,
+        bytes: editor.image.bytes,
+        mime: editor.image.mime,
+        image: editor.image.element
+      });
+      drawMarks();
+      updateGo();
+      return;
+    }
+    editor.drag = {
+      page: editor.page,
+      start: point,
+      points: [point],
+      tool: editor.tool
+    };
+    overlayCapture(event);
+  }
+
+  function overlayCapture(event) {
+    if (event.target.setPointerCapture && event.pointerId != null) {
+      try { event.target.setPointerCapture(event.pointerId); } catch (err) { /* ignore */ }
+    }
+  }
+
+  function onEditMove(event) {
+    if (!editor.drag) return;
+    var point = editorPoint(event);
+    if (!point) return;
+    if (editor.drag.tool === 'draw') editor.drag.points.push(point);
+    else editor.drag.points = [editor.drag.start, point];
+    drawMarks();
+    var view = state.edit.view;
+    if (editor.drag.tool === 'shape' && editor.drag.points.length === 2) {
+      var overlay = $('editOverlay');
+      var ctx = overlay.getContext('2d');
+      var a = editor.drag.points[0];
+      var b = editor.drag.points[1];
+      var x = Math.min(a.x, b.x);
+      var y = Math.min(a.y, b.y);
+      ctx.strokeStyle = $('editColor').value;
+      ctx.strokeRect(x * view.scale, (view.height - Math.max(a.y, b.y)) * view.scale, Math.abs(b.x - a.x) * view.scale, Math.abs(b.y - a.y) * view.scale);
+    }
+  }
+
+  function onEditUp() {
+    var drag = editor.drag;
+    editor.drag = null;
+    if (!drag) return;
+    if (drag.tool === 'shape' && drag.points.length >= 2) {
+      var a = drag.points[0];
+      var b = drag.points[drag.points.length - 1];
+      var width = Math.abs(b.x - a.x);
+      var height = Math.abs(b.y - a.y);
+      if (width > 4 && height > 4) {
+        editor.marks.push({
+          id: uid(),
+          type: 'rect',
+          page: drag.page,
+          x: Math.min(a.x, b.x),
+          y: Math.min(a.y, b.y),
+          width: width,
+          height: height,
+          color: $('editColor').value
+        });
+      }
+    } else if (drag.tool === 'draw' && drag.points.length > 1) {
+      editor.marks.push({
+        id: uid(),
+        type: 'ink',
+        page: drag.page,
+        points: drag.points,
+        color: $('editColor').value,
+        thickness: 2
+      });
+    }
+    drawMarks();
+    updateGo();
+  }
+
+  function wireEditor() {
+    var overlay = $('editOverlay');
+    overlay.addEventListener('pointerdown', onEditDown);
+    overlay.addEventListener('pointermove', onEditMove);
+    overlay.addEventListener('pointerup', onEditUp);
+    overlay.addEventListener('pointercancel', onEditUp);
+    document.querySelectorAll('[data-edit-tool]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        editor.tool = button.dataset.editTool;
+        document.querySelectorAll('[data-edit-tool]').forEach(function (other) {
+          other.classList.toggle('is-on', other === button);
+        });
+      });
+    });
+    $('editUndo').addEventListener('click', function () {
+      editor.marks.pop();
+      drawMarks();
+      updateGo();
+    });
+    $('editPrev').addEventListener('click', function () {
+      if (editor.page > 1) {
+        editor.page -= 1;
+        drawEditorPage().catch(showError);
+      }
+    });
+    $('editNext').addEventListener('click', function () {
+      var total = state.edit && state.edit.handle ? state.edit.handle.numPages : 1;
+      if (editor.page < total) {
+        editor.page += 1;
+        drawEditorPage().catch(showError);
+      }
+    });
+    $('editImageInput').addEventListener('change', function () {
+      var file = $('editImageInput').files && $('editImageInput').files[0];
+      $('editImageInput').value = '';
+      if (!file) return;
+      var url = URL.createObjectURL(file);
+      var image = new Image();
+      image.onload = function () {
+        file.arrayBuffer().then(function (buffer) {
+          editor.image = {
+            element: image,
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+            bytes: new Uint8Array(buffer),
+            mime: /png$/i.test(file.type) || /\.png$/i.test(file.name) ? 'image/png' : 'image/jpeg'
+          };
+          URL.revokeObjectURL(url);
+          toast('Click the page to place the picture.');
+        });
+      };
+      image.onerror = function () {
+        URL.revokeObjectURL(url);
+        toast('That picture could not be read.');
+      };
+      image.src = url;
+    });
+  }
+
   function init() {
     if (!window.PDFLib) {
-      setResult('The PDF library did not load. Open this folder with Start.command.', 'error');
+      setResult('The PDF library did not load. Refresh the page and try again.', 'error');
       return;
     }
     if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = 'vendor/pdf.worker.min.js';
-    document.querySelectorAll('[data-mode-btn]').forEach(function (btn) {
-      btn.addEventListener('click', function () { setMode(btn.dataset.modeBtn); });
+    document.body.addEventListener('click', function (event) {
+      var card = event.target.closest('[data-mode-btn]');
+      if (card && !state.busy) setMode(card.dataset.modeBtn);
+      var clearer = event.target.closest('[data-clear]');
+      if (clearer && !state.busy) {
+        var key = clearer.dataset.clear;
+        if (key === 'images') clearImages();
+        else if (key === 'merge') clearMerge();
+        else clearSlot(key);
+      }
+      var sample = event.target.closest('[data-sample]');
+      if (sample && !state.busy) {
+        samplePdf('Sample', [[0.42, 0.16, 0.72], [0.23, 0.12, 0.4]]).then(function (file) {
+          return setSinglePdf(sample.dataset.sample, file);
+        }).catch(showError);
+      }
     });
+    $('backHome').addEventListener('click', function () { setMode('home'); });
     $('settingsForm').addEventListener('submit', go);
-    $('settingsForm').addEventListener('input', queuePaint);
-    $('settingsForm').addEventListener('change', queuePaint);
+    function onSettings() {
+      syncVisibility();
+      updateGo();
+      queuePaint();
+    }
+    $('settingsForm').addEventListener('input', onSettings);
+    $('settingsForm').addEventListener('change', onSettings);
     wireMargins();
-    wireDrop($('imageDrop'), $('imageInput'));
-    wireDrop($('mergeDrop'), $('mergeInput'));
-    wireDrop($('resizeDrop'), $('resizeInput'));
-    wireDrop($('pngDrop'), $('pngInput'));
-    $('browseImages').addEventListener('click', function () { $('imageInput').click(); });
-    $('browseMerge').addEventListener('click', function () { $('mergeInput').click(); });
-    $('browseResize').addEventListener('click', function () { $('resizeInput').click(); });
-    $('browsePng').addEventListener('click', function () { $('pngInput').click(); });
+    wireEditor();
+    [
+      ['imageDrop', 'imageInput'],
+      ['mergeDrop', 'mergeInput'],
+      ['resizeDrop', 'resizeInput'],
+      ['pngDrop', 'pngInput'],
+      ['splitDrop', 'splitInput'],
+      ['compressDrop', 'compressInput'],
+      ['towordDrop', 'towordInput'],
+      ['topptDrop', 'topptInput'],
+      ['toexcelDrop', 'toexcelInput'],
+      ['fromwordDrop', 'fromwordInput'],
+      ['frompptDrop', 'frompptInput'],
+      ['fromexcelDrop', 'fromexcelInput'],
+      ['editDrop', 'editInput']
+    ].forEach(function (pair) { wireDrop($(pair[0]), $(pair[1])); });
+    [
+      ['browseImages', 'imageInput'],
+      ['browseMerge', 'mergeInput'],
+      ['browseResize', 'resizeInput'],
+      ['browsePng', 'pngInput'],
+      ['browseSplit', 'splitInput'],
+      ['browseCompress', 'compressInput'],
+      ['browseToword', 'towordInput'],
+      ['browseToppt', 'topptInput'],
+      ['browseToexcel', 'toexcelInput'],
+      ['browseFromword', 'fromwordInput'],
+      ['browseFromppt', 'frompptInput'],
+      ['browseFromexcel', 'fromexcelInput'],
+      ['browseEdit', 'editInput']
+    ].forEach(function (pair) {
+      $(pair[0]).addEventListener('click', function () { $(pair[1]).click(); });
+    });
     $('sampleImages').addEventListener('click', function () { sampleImages().catch(showError); });
     $('sampleMerge').addEventListener('click', function () { sampleMerge().catch(showError); });
     $('sampleResize').addEventListener('click', function () {
-      samplePdf('Border sample', [[0.77, 0.29, 0.11]]).then(function (file) {
+      samplePdf('Border sample', [[0.42, 0.16, 0.72]]).then(function (file) {
         return setSinglePdf('resize', file);
       }).catch(showError);
     });
     $('samplePng').addEventListener('click', function () {
-      samplePdf('Pages', [[0.24, 0.29, 0.22], [0.77, 0.29, 0.11]]).then(function (file) {
+      samplePdf('Pages', [[0.23, 0.12, 0.4], [0.42, 0.16, 0.72]]).then(function (file) {
         return setSinglePdf('png', file);
       }).catch(showError);
     });
-    $('clearImages').addEventListener('click', clearImages);
-    $('clearMerge').addEventListener('click', clearMerge);
-    $('clearResize').addEventListener('click', function () { clearSlot('resize'); });
-    $('clearPng').addEventListener('click', function () { clearSlot('png'); });
     wireListClicks($('imageList'), function () { return state.images; }, function (list) {
       state.images = list;
       renderImages();
@@ -974,9 +1544,6 @@
       document.querySelectorAll('.drop').forEach(function (zone) { zone.classList.remove('is-dragover'); });
       var files = event.dataTransfer ? Array.prototype.slice.call(event.dataTransfer.files || []) : [];
       if (!files.length) return;
-      if ((state.mode === 'resize' || state.mode === 'png') && files.length > 1) {
-        toast('Using the first PDF.');
-      }
       addIncoming(files);
     });
     window.addEventListener('resize', queuePaint);
@@ -984,9 +1551,6 @@
     syncVisibility();
     updateGo();
     queuePaint();
-    if (location.protocol === 'file:') {
-      $('fileHint').textContent = 'Pictures, merge, and page size work from this file. For PDF to PNG, double-click Start.command in this folder.';
-    }
   }
 
   window.FolioApp = {
