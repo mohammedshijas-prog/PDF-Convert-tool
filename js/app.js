@@ -208,11 +208,11 @@
       orientation: orientation,
       customWidthMm: clamp(parseFloat($('customWidth').value), 40, 800, 210),
       customHeightMm: clamp(parseFloat($('customHeight').value), 40, 800, 297),
-      marginTopMm: clamp(parseFloat($('marginTop').value), 0, 80, 12),
-      marginRightMm: clamp(parseFloat($('marginRight').value), 0, 80, 12),
-      marginBottomMm: clamp(parseFloat($('marginBottom').value), 0, 80, 12),
-      marginLeftMm: clamp(parseFloat($('marginLeft').value), 0, 80, 12),
-      framePt: clamp(parseFloat($('framePt').value), 0, 20, 0),
+      marginTopMm: marginMm(),
+      marginRightMm: marginMm(),
+      marginBottomMm: marginMm(),
+      marginLeftMm: marginMm(),
+      framePt: marginChoice() === 'none' ? 0 : clamp(parseFloat($('framePt').value), 0, 20, 0),
       frameColor: $('frameColor').value || '#5b21b6',
       fit: fit,
       background: $('background').value || '#ffffff',
@@ -224,6 +224,19 @@
       splitMode: radioValue('splitMode', 'each') === 'range' ? 'range' : 'each',
       compressLevel: radioValue('compressLevel', 'balanced')
     };
+  }
+
+  function marginChoice() {
+    var choice = radioValue('marginSize', 'small');
+    if (choice !== 'none' && choice !== 'big') return 'small';
+    return choice;
+  }
+
+  function marginMm() {
+    var choice = marginChoice();
+    if (choice === 'none') return 0;
+    if (choice === 'big') return 20;
+    return 8;
   }
 
   function baseName(name) {
@@ -247,6 +260,7 @@
       if (size === 'custom' || size === 'image' || size === 'original') $('orientationField').hidden = true;
       $('customSizeField').hidden = size !== 'custom';
       if (mode === 'resize' && size === 'original') $('fitField').hidden = true;
+      $('borderField').hidden = marginChoice() === 'none';
     }
     if (mode === 'split' && $('splitRange')) {
       $('splitRange').hidden = radioValue('splitMode', 'each') !== 'range';
@@ -785,13 +799,15 @@
       }
     }
     var m = FolioEngine.margins(settings);
-    ctx.save();
-    ctx.strokeStyle = '#6d28d9';
-    ctx.globalAlpha = 0.85;
-    ctx.setLineDash([4, 4]);
-    ctx.lineWidth = 1;
-    ctx.strokeRect(m.left * view + 1, m.top * view + 1, Math.max(0, (page.width - m.left - m.right) * view - 2), Math.max(0, (page.height - m.top - m.bottom) * view - 2));
-    ctx.restore();
+    if (m.top + m.right + m.bottom + m.left > 0) {
+      ctx.save();
+      ctx.strokeStyle = '#6d28d9';
+      ctx.globalAlpha = 0.85;
+      ctx.setLineDash([4, 4]);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(m.left * view + 1, m.top * view + 1, Math.max(0, (page.width - m.left - m.right) * view - 2), Math.max(0, (page.height - m.top - m.bottom) * view - 2));
+      ctx.restore();
+    }
 
     var mmW = page.width / FolioEngine.MM;
     var mmH = page.height / FolioEngine.MM;
@@ -1088,20 +1104,6 @@
       var files = Array.prototype.slice.call(input.files || []);
       input.value = '';
       addIncoming(files);
-    });
-  }
-
-  function wireMargins() {
-    var inputs = ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].map($);
-    inputs.forEach(function (input) {
-      input.addEventListener('input', function () {
-        if ($('lockMargins').checked) {
-          inputs.forEach(function (other) {
-            if (other !== input) other.value = input.value;
-          });
-        }
-        queuePaint();
-      });
     });
   }
 
@@ -1480,7 +1482,6 @@
     }
     $('settingsForm').addEventListener('input', onSettings);
     $('settingsForm').addEventListener('change', onSettings);
-    wireMargins();
     wireEditor();
     [
       ['imageDrop', 'imageInput'],

@@ -477,21 +477,34 @@
           </label>
         </div>
 
-        <div class="field" data-modes="images resize">
-          <span>Margins (mm)</span>
-          <div class="margins">
-            <label>Top <input id="marginTop" type="number" min="0" max="80" step="1" value="12"></label>
-            <label>Right <input id="marginRight" type="number" min="0" max="80" step="1" value="12"></label>
-            <label>Bottom <input id="marginBottom" type="number" min="0" max="80" step="1" value="12"></label>
-            <label>Left <input id="marginLeft" type="number" min="0" max="80" step="1" value="12"></label>
+        <fieldset class="field" data-modes="images resize">
+          <legend>Margin</legend>
+          <div class="margin-picks">
+            <label>
+              <input type="radio" name="marginSize" value="none">
+              <span class="pick">
+                <svg viewBox="0 0 48 36" aria-hidden="true"><rect x="3" y="2" width="42" height="32" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="5" y="4" width="38" height="28" rx="1" fill="#c4b5fd"/></svg>
+                No margin
+              </span>
+            </label>
+            <label>
+              <input type="radio" name="marginSize" value="small" checked>
+              <span class="pick">
+                <svg viewBox="0 0 48 36" aria-hidden="true"><rect x="3" y="2" width="42" height="32" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="10" y="8" width="28" height="20" rx="1" fill="#c4b5fd"/></svg>
+                Small
+              </span>
+            </label>
+            <label>
+              <input type="radio" name="marginSize" value="big" >
+              <span class="pick">
+                <svg viewBox="0 0 48 36" aria-hidden="true"><rect x="3" y="2" width="42" height="32" rx="2" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="15" y="11" width="18" height="14" rx="1" fill="#c4b5fd"/></svg>
+                Big
+              </span>
+            </label>
           </div>
-        </div>
-        <label class="check" data-modes="images resize">
-          <input id="lockMargins" type="checkbox" checked>
-          Same margin on every side
-        </label>
+        </fieldset>
 
-        <div class="field" data-modes="images resize">
+        <div class="field" id="borderField" data-modes="images resize">
           <span>Border</span>
           <div class="split">
             <label>Thickness (pt)

@@ -332,10 +332,39 @@ input:focus-visible, select:focus-visible, .browse:focus-visible, .quiet:focus-v
   border-radius: 999px;
   padding: 6px 10px;
 }
-.margins, .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.margins { grid-template-columns: repeat(4, 1fr); }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.margin-picks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.margin-picks label { position: relative; display: block; }
+.margin-picks input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.margin-picks .pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-height: 84px;
+  background: white;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 10px 4px 8px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--ink);
+}
+.margin-picks svg { width: 42px; height: 32px; display: block; }
+.margin-picks input:checked + .pick {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.margin-picks input:focus-visible + .pick { outline: 2px solid var(--accent); outline-offset: 2px; }
 .check { display: flex; gap: 8px; align-items: center; margin: -4px 0 14px; font-size: 14px; }
+.check.bare { margin-top: 0; }
 .check input { margin: 0; }
+.is-muted { opacity: 0.45; }
 
 .go-row {
   padding: 12px 22px 16px;
