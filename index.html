@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Folio — free PDF tools</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='7' y='4' width='14' height='20' rx='2' fill='%23f4ecdf'/%3E%3Crect x='11' y='8' width='14' height='20' rx='2' fill='%23c4491d'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="brand-col">
+      <div class="logo">
+        <svg viewBox="0 0 32 32" aria-hidden="true">
+          <rect x="6" y="3" width="15" height="21" rx="2" fill="#f4ecdf"></rect>
+          <rect x="11" y="8" width="15" height="21" rx="2" fill="#c4491d"></rect>
+        </svg>
+        <h1>Folio</h1>
+      </div>
+      <p class="tagline">Free PDF tools on this computer. Pictures, merge, paper size, and PNG. Nothing is uploaded.</p>
+      <nav aria-label="Tools">
+        <button type="button" data-mode-btn="images" aria-pressed="true">Images to PDF</button>
+        <button type="button" data-mode-btn="merge" aria-pressed="false">Merge PDFs</button>
+        <button type="button" data-mode-btn="resize" aria-pressed="false">Size and border</button>
+        <button type="button" data-mode-btn="png" aria-pressed="false">PDF to PNG</button>
+      </nav>
+      <p class="fine" id="fileHint">Twenty pictures fit in one PDF. For more, make a second PDF and merge them. Open Start.command if PDF to PNG cannot read a file.</p>
+    </header>
+
+    <main class="workspace">
+      <section data-panel="images">
+        <div class="panel-head">
+          <div>
+            <h2>Images to PDF</h2>
+            <p class="lede">Turn up to 20 pictures into one PDF. Set the paper size, the margin, and a border, then download.</p>
+            <p class="count" id="imageCount">0 of 20 pictures</p>
+          </div>
+          <button type="button" class="text-btn" id="clearImages">Clear</button>
+        </div>
+        <div class="drop" id="imageDrop" tabindex="0" aria-label="Drop pictures to add them">
+          <div class="drop-copy">
+            <strong>Drop pictures here</strong>
+            <span>PNG, JPG, or WebP. Up to 20.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseImages">Browse</button>
+            <button type="button" class="quiet" id="sampleImages">Use sample pictures</button>
+          </div>
+        </div>
+        <input id="imageInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif,.png,.jpg,.jpeg,.webp,.gif" multiple hidden>
+        <div class="thumbs" id="imageList" data-reorder="images"></div>
+      </section>
+
+      <section data-panel="merge" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Merge PDFs</h2>
+            <p class="lede">Join PDFs in the order you choose. Drag a file, or use the arrows, to change the order.</p>
+            <p class="count" id="mergeCount">0 files</p>
+          </div>
+          <button type="button" class="text-btn" id="clearMerge">Clear</button>
+        </div>
+        <div class="drop" id="mergeDrop" tabindex="0" aria-label="Drop PDFs to merge">
+          <div class="drop-copy">
+            <strong>Drop PDFs here</strong>
+            <span>Two or more. Up to 20 files.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseMerge">Browse</button>
+            <button type="button" class="quiet" id="sampleMerge">Use sample PDFs</button>
+          </div>
+        </div>
+        <input id="mergeInput" type="file" accept="application/pdf,.pdf" multiple hidden>
+        <div class="thumbs" id="mergeList" data-reorder="merge"></div>
+      </section>
+
+      <section data-panel="resize" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>Size and border</h2>
+            <p class="lede">Give every page a paper size, a margin, and an optional line border. Keep original size when you only want a border.</p>
+            <p class="count" id="resizeCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" id="clearResize">Clear</button>
+        </div>
+        <div class="drop" id="resizeDrop" tabindex="0" aria-label="Drop a PDF to resize">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>The new size and border apply to every page.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browseResize">Browse</button>
+            <button type="button" class="quiet" id="sampleResize">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="resizeInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="resizeCard"></div>
+      </section>
+
+      <section data-panel="png" hidden>
+        <div class="panel-head">
+          <div>
+            <h2>PDF to PNG</h2>
+            <p class="lede">Save pages as PNG pictures. To change paper size or add a border first, use Size and border, then come back here.</p>
+            <p class="count" id="pngCount">No PDF yet</p>
+          </div>
+          <button type="button" class="text-btn" id="clearPng">Clear</button>
+        </div>
+        <div class="drop" id="pngDrop" tabindex="0" aria-label="Drop a PDF to export">
+          <div class="drop-copy">
+            <strong>Drop one PDF here</strong>
+            <span>One page saves as a PNG. More pages save as a zip.</span>
+          </div>
+          <div class="drop-actions">
+            <button type="button" class="browse" id="browsePng">Browse</button>
+            <button type="button" class="quiet" id="samplePng">Use a sample PDF</button>
+          </div>
+        </div>
+        <input id="pngInput" type="file" accept="application/pdf,.pdf" hidden>
+        <div class="rows" id="pngCard"></div>
+      </section>
+    </main>
+
+    <form class="settings" id="settingsForm">
+      <div class="settings-scroll">
+        <h2>Page</h2>
+        <div class="preview-wrap">
+          <canvas id="preview" width="560" height="792" aria-label="Page preview"></canvas>
+        </div>
+        <p id="previewMeta">Add a picture to preview the page.</p>
+        <p class="mode-hint" id="modeHint"></p>
+
+        <label class="field" data-modes="images">
+          Page size
+          <select id="imagePageSize">
+            <option value="a4" selected>A4</option>
+            <option value="a3">A3</option>
+            <option value="a5">A5</option>
+            <option value="letter">Letter</option>
+            <option value="legal">Legal</option>
+            <option value="image">Match picture</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+
+        <label class="field" data-modes="resize">
+          Page size
+          <select id="resizePageSize">
+            <option value="original" selected>Keep original size</option>
+            <option value="a4">A4</option>
+            <option value="a3">A3</option>
+            <option value="a5">A5</option>
+            <option value="letter">Letter</option>
+            <option value="legal">Legal</option>
+            <option value="custom">Custom</option>
+          </select>
+        </label>
+
+        <fieldset class="field" id="orientationField" data-modes="images resize">
+          <legend>Orientation</legend>
+          <div class="choices">
+            <label><input type="radio" name="orientation" value="auto" checked> Auto</label>
+            <label><input type="radio" name="orientation" value="portrait"> Portrait</label>
+            <label><input type="radio" name="orientation" value="landscape"> Landscape</label>
+          </div>
+        </fieldset>
+
+        <div class="field split" id="customSizeField" data-modes="images resize" hidden>
+          <label>Width (mm)
+            <input id="customWidth" type="number" min="40" max="800" step="1" value="210">
+          </label>
+          <label>Height (mm)
+            <input id="customHeight" type="number" min="40" max="800" step="1" value="297">
+          </label>
+        </div>
+
+        <div class="field" data-modes="images resize">
+          <span>Margins (mm)</span>
+          <div class="margins">
+            <label>Top <input id="marginTop" type="number" min="0" max="80" step="1" value="12"></label>
+            <label>Right <input id="marginRight" type="number" min="0" max="80" step="1" value="12"></label>
+            <label>Bottom <input id="marginBottom" type="number" min="0" max="80" step="1" value="12"></label>
+            <label>Left <input id="marginLeft" type="number" min="0" max="80" step="1" value="12"></label>
+          </div>
+        </div>
+        <label class="check" data-modes="images resize">
+          <input id="lockMargins" type="checkbox" checked>
+          Same margin on every side
+        </label>
+
+        <div class="field" data-modes="images resize">
+          <span>Border</span>
+          <div class="split">
+            <label>Thickness (pt)
+              <input id="framePt" type="number" min="0" max="20" step="0.5" value="0">
+            </label>
+            <label>Color
+              <input id="frameColor" type="color" value="#241c16">
+            </label>
+          </div>
+        </div>
+
+        <fieldset class="field" id="fitField" data-modes="images resize">
+          <legend>Picture fit</legend>
+          <div class="choices">
+            <label><input type="radio" name="fit" value="contain" checked> Fit</label>
+            <label data-modes="images"><input type="radio" name="fit" value="fill"> Fill</label>
+            <label><input type="radio" name="fit" value="stretch"> Stretch</label>
+          </div>
+        </fieldset>
+
+        <label class="field" data-modes="images resize png">
+          Paper color
+          <input id="background" type="color" value="#ffffff">
+        </label>
+
+        <fieldset class="field" data-modes="images">
+          <legend>Quality</legend>
+          <div class="choices">
+            <label><input type="radio" name="quality" value="high" checked> High</label>
+            <label><input type="radio" name="quality" value="medium"> Medium</label>
+            <label><input type="radio" name="quality" value="small"> Small file</label>
+            <label><input type="radio" name="quality" value="original"> Original</label>
+          </div>
+        </fieldset>
+
+        <fieldset class="field" data-modes="png">
+          <legend>Resolution</legend>
+          <div class="choices">
+            <label><input type="radio" name="dpi" value="72"> 72 dpi</label>
+            <label><input type="radio" name="dpi" value="150" checked> 150 dpi</label>
+            <label><input type="radio" name="dpi" value="300"> 300 dpi</label>
+          </div>
+        </fieldset>
+
+        <div class="field split" data-modes="png">
+          <label>From page
+            <input id="pageFrom" type="number" min="1" step="1" value="1">
+          </label>
+          <label>To page
+            <input id="pageTo" type="number" min="1" step="1" value="1">
+          </label>
+        </div>
+
+        <label class="field">
+          File name
+          <input id="filename" type="text" value="images.pdf" maxlength="80" spellcheck="false" autocomplete="off">
+        </label>
+      </div>
+
+      <div class="go-row">
+        <div class="progress" id="progress" hidden><span id="progressBar"></span></div>
+        <button class="go" id="go" type="submit">Make PDF</button>
+        <p class="result" id="result" role="status"></p>
+        <a id="saveLink" hidden>Download again</a>
+      </div>
+    </form>
+  </div>
+
+  <p id="toast" role="status" hidden></p>
+  <noscript>Folio needs JavaScript. It still runs only on this computer.</noscript>
+  <script src="vendor/pdf-lib.min.js"></script>
+  <script src="vendor/pdf.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
