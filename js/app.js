@@ -1,8 +1,8 @@
 (function () {
   'use strict';
 
-  var MAX_IMAGES = 20;
-  var MAX_PDFS = 20;
+  var MAX_IMAGES = 70;
+  var MAX_PDFS = 70;
   var MAX_PNG_PAGES = 40;
 
   var MODES = {
@@ -194,6 +194,7 @@
       ? ['original', 'a4', 'a3', 'a5', 'letter', 'legal', 'custom']
       : ['a4', 'a3', 'a5', 'letter', 'legal', 'image', 'custom'];
     if (allowed.indexOf(pageSize) === -1) pageSize = mode === 'resize' ? 'original' : 'a4';
+    if (mode === 'images' && marginChoice() === 'none') pageSize = 'image';
     var fit = radioValue('fit', 'contain');
     if (['contain', 'fill', 'stretch'].indexOf(fit) === -1) fit = 'contain';
     if (mode === 'resize' && (fit === 'fill' || pageSize === 'original')) fit = 'contain';
@@ -256,7 +257,17 @@
       btn.setAttribute('aria-pressed', String(btn.dataset.modeBtn === mode));
     });
     if (mode === 'images' || mode === 'resize') {
-      var size = mode === 'resize' ? $('resizePageSize').value : $('imagePageSize').value;
+      var pageSelect = mode === 'resize' ? $('resizePageSize') : $('imagePageSize');
+      if (mode === 'images' && marginChoice() === 'none') {
+        if (pageSelect.value !== 'image') {
+          if (!pageSelect.dataset.prevSize) pageSelect.dataset.prevSize = pageSelect.value;
+          pageSelect.value = 'image';
+        }
+      } else if (mode === 'images' && pageSelect.dataset.prevSize) {
+        pageSelect.value = pageSelect.dataset.prevSize;
+        pageSelect.dataset.prevSize = '';
+      }
+      var size = pageSelect.value;
       if (size === 'custom' || size === 'image' || size === 'original') $('orientationField').hidden = true;
       $('customSizeField').hidden = size !== 'custom';
       if (mode === 'resize' && size === 'original') $('fitField').hidden = true;
@@ -267,7 +278,9 @@
     }
     document.body.classList.toggle('is-home', mode === 'home');
     $('backHome').hidden = mode === 'home';
-    $('modeHint').textContent = MODES[mode].hint;
+    $('modeHint').textContent = mode === 'images' && marginChoice() === 'none'
+      ? 'No margin makes each page the same size as its picture. The export has no empty edge and no border.'
+      : MODES[mode].hint;
   }
 
   function updateGo() {
@@ -388,7 +401,7 @@
       }
     }
     renderImages();
-    if (limited) toast('Only 20 pictures can go in one PDF.');
+    if (limited) toast('Only ' + MAX_IMAGES + ' pictures can go in one PDF.');
     else if (failed.length) toast('Skipped ' + failed[0] + '. This browser could not read it.');
     else if (ignored) toast('Skipped a file that was not a picture.');
     return { added: added, limited: limited };
@@ -461,7 +474,7 @@
         toast(files[i].name + ' — ' + err.message);
       }
     }
-    if (limited) toast('Twenty PDFs is the limit for one merge.');
+    if (limited) toast(MAX_PDFS + ' PDFs is the limit for one merge.');
   }
 
   function renderMerge() {
